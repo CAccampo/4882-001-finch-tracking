@@ -123,36 +123,24 @@ class CameraProcessor:
                 this conditional below is used to not have to reclaulate the distance to a qr code if the position within the frame has not changed
                 the items stored in the dictionary and key:data and value:list where the list is ["corner_points", distance]
                 '''
-                if data in self.distance_dict.keys():
-                    if corner_points == self.distance_dict[data][0]:
-                        distance = self.distance_dict[data][1]
-                    else:
-                        #undistort pixel coordinates of the QR center
-                        undistorted_coordinates = cv2.undistortPoints(
-                            np.array([obj.rect.center], dtype='float32'), np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32), self.dist_coeffs)
-
-                        depth = self.calculate_depth(frame)
-                        distance = self.calculate_cam_distance(undistorted_coordinates, depth)
-                        self.distance_dict[data] = [corner_points, distance]
-                        
+                if data in self.distance_dict and corner_points == self.distance_dict[data][0]:
+                    distance = self.distance_dict[data][1]
                 else:
                     undistorted_coordinates = cv2.undistortPoints(
                         np.array([obj.rect.center], dtype='float32'), np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32), self.dist_coeffs)
-
                     depth = self.calculate_depth(frame)
                     distance = self.calculate_cam_distance(undistorted_coordinates, depth)
                     self.distance_dict[data] = [corner_points, distance]
-                    
 
-                with self.data_lock:
-                            self.batched_data.append({
-                                "camera_id": str(self.camera_id),
-                                "timestamp": timestamp,
-                                "data": data,
-                                "corner_points": corner_points,
-                                "distance": distance
-                            })
-                print(f"| {self.camera_id:10} | {timestamp:30} | {data:9}  | {corner_points:30} | {distance:.2f} mm")
+                    with self.data_lock:
+                        self.batched_data.append({
+                            "camera_id": str(self.camera_id),
+                            "timestamp": timestamp,
+                            "data": data,
+                            "corner_points": corner_points,
+                            "distance": distance
+                        })
+                        print(f"| {self.camera_id:10} | {timestamp:30} | {data:9}  | {corner_points:30} | {distance:.2f} mm")
 
             print('|', ' ' * 87, '|')
             print('-' * 89)
