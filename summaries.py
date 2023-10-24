@@ -4,41 +4,36 @@ from datetime import datetime, timedelta
 
 PROJECT_ID = 'finch-project-399922'
 DATASET_ID = 'finch_beta_table'
-TABLE_ID_FILE = 'table_id.txt'
+TABLE_ID = 'new_coords_table'
 SAFE_DISTANCE = 6  
-
 
 client = bigquery.Client(project=PROJECT_ID)
 
 def get_data_for_interval(start_time, end_time):
-    table_id = ''
-    with open(TABLE_ID_FILE, 'r') as file:
-        table_id = file.read().strip()
-
     query = f"""
-        SELECT qr_data, timestamp, Position
-        FROM `{PROJECT_ID}.{DATASET_ID}.{table_id}`
+        SELECT data, timestamp, corner_points, distance
+        FROM `{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}`
         WHERE timestamp BETWEEN '{start_time}' AND '{end_time}'
         ORDER BY timestamp
     """
     return client.query(query).result()
 
-def compute_distance(pos1, pos2):
-    """
-    Here, we compute euclidean distance between two positions.
-    """
-    x1, y1 = map(float, pos1.split(','))
-    x2, y2 = map(float, pos2.split(','))
+def get_center_from_corner_points(corner_points):
+    points = [tuple(map(float, point.strip('()').split(','))) for point in corner_points.split()]
+    x_center = sum(point[0] for point in points) / len(points)
+    y_center = sum(point[1] for point in points) / len(points)
+    return x_center, y_center
+
+def compute_distance(corner_points1, corner_points2):
+    x1, y1 = get_center_from_corner_points(corner_points1)
+    x2, y2 = get_center_from_corner_points(corner_points2)
     return np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
 def generate_summary(data):
-    """
-    We then generate a summary of movements and close contacts for the data.
-    """
     summary = {}
     for row in data:
-        id = row.qr_data
-        position = row.Position
+        id = row.data
+        corner_points = row.corner_points
         timestamp = row.timestamp
 
         if id not in summary:
@@ -46,19 +41,18 @@ def generate_summary(data):
                 'positions': [],
                 'close_contacts': []
             }
-        summary[id]['positions'].append(position)
+        summary[id]['positions'].append(corner_points)
 
         for other_id, info in summary.items():
             if other_id != id:
-                if info['positions'] and compute_distance(position, info['positions'][-1]) < SAFE_DISTANCE:
-                    summary[id]['close_contacts'].append(other_id)
+                for other_position in info['positions']:
+                    if compute_distance(corner_points, other_position) < SAFE_DISTANCE:
+                        summary[id]['close_contacts'].append(other_id)
+                        break
     
     return summary
 
 def main(interval_minutes=60):
-    """
-    Main function to fetch data and generate movement summaries.
-    """
     current_time = datetime.utcnow()
     start_time = current_time - timedelta(minutes=interval_minutes)
 
