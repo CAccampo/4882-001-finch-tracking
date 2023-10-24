@@ -41,14 +41,15 @@ def generate_summary(data):
                 'positions': [],
                 'close_contacts': []
             }
-        summary[id]['positions'].append(corner_points)
+        summary[id]['positions'].append([corner_points, timestamp])
 
         for other_id, info in summary.items():
             if other_id != id:
                 for other_position in info['positions']:
-                    if compute_distance(corner_points, other_position) < SAFE_DISTANCE:
-                        summary[id]['close_contacts'].append(other_id)
-                        break
+                    if other_position[1] == timestamp:
+                        if compute_distance(corner_points, other_position[0]) < SAFE_DISTANCE:
+                            summary[id]['close_contacts'].append([other_id, timestamp])
+                            break
     
     return summary
 
