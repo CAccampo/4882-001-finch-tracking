@@ -132,15 +132,15 @@ class CameraProcessor:
                     distance = self.calculate_cam_distance(undistorted_coordinates, depth)
                     self.distance_dict[data] = [corner_points, distance]
 
-                    with self.data_lock:
-                        self.batched_data.append({
-                            "camera_id": str(self.camera_id),
-                            "timestamp": timestamp,
-                            "data": data,
-                            "corner_points": corner_points,
-                            "distance": distance
-                        })
-                        print(f"| {self.camera_id:10} | {timestamp:30} | {data:9}  | {corner_points:30} | {distance:.2f} mm")
+                with self.data_lock:
+                    self.batched_data.append({
+                        "camera_id": str(self.camera_id),
+                        "timestamp": timestamp,
+                        "data": data,
+                        "corner_points": corner_points,
+                        "distance": distance
+                    })
+                    print(f"| {self.camera_id:10} | {timestamp:30} | {data:9}  | {corner_points:30} | {distance:.2f} mm")
 
             print('|', ' ' * 87, '|')
             print('-' * 89)
