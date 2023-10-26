@@ -1,0 +1,7 @@
+opencv-python
+pyzbar
+numpy
+torch
+transformers
+Pillow
+google-cloud-bigquery
