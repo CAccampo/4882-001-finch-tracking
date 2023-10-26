@@ -5,8 +5,7 @@ import pyzbar
 import queue
 import threading
 import numpy as np
-import torch
-from transformers import AutoModelForDepth, AutoFeature
+import time
 from PIL import Image
 from datetime import datetime
 from google.cloud import bigquery
@@ -29,8 +28,6 @@ class CameraProcessor:
         self.upload_thread = threading.Thread(target=self.upload_data, daemon=True)
         self.upload_thread.start()
 
-        #load MIDAS model
-        self.midas_model = AutoModelForDepth.from_pretrained("intel-isl/MiDaS")
         print(f'Model Loaded for Camera {self.camera_id}')
 
         self.processing_thread = threading.Thread(target=self.process_frames)
@@ -79,7 +76,6 @@ class CameraProcessor:
     def calculate_depth(self, frame):
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         image = image.resize((384, 384))
-        feature = AutoFeature.from_dict(self.midas_model.preprocess(image))
 
         #ensure you have the correct camera_matrix and dist_coeffs
         camera_matrix = np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32)
