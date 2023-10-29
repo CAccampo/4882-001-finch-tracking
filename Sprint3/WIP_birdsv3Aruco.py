@@ -104,7 +104,32 @@ class CameraProcessor:
         obj_pixel_size = max(width, height)
         return obj_pixel_size
 
+    def init_heatmap(self):
+        #determine w/h of camera image with test frame
+        frame = self.frame_queue.get()
+
+        #create blank white image of same size
+        heatmap_img = np.ones(frame.shape, dtype = np.uint8)
+        return 255*heatmap_img
+    
+    def draw_heatmap(self, center_point, data, heatmap_img):
+        #opencv doesnt like variable colors so here we are
+        dot_colors = (0,0,0)
+        if data == 1:
+            dot_colors = (255, 0, 0)
+        elif data == 2:
+            dot_colors = (0, 255, 0)
+        elif data == 3:
+            dot_colors = (0, 0, 255)
+        elif data == 4:
+            dot_colors = (255, 255, 0)
+        elif data == 5:
+            dot_colors = (0, 255, 255)
+
+        return cv2.circle(heatmap_img, tuple(center_point.round().astype(int)), radius=0, color=dot_colors, thickness=-5)
+
     def process_frames(self):
+        heatmap_img = self.init_heatmap()
         while True:
             frame = self.frame_queue.get()
             if frame is None:
@@ -123,14 +148,17 @@ class CameraProcessor:
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
 
                     corner_points = ' '.join([f'({x}, {y})' for x, y in points])
-
+                    
+                    heatmap_img = self.draw_heatmap(points.mean(0), data, heatmap_img)
+                    cv2.imwrite('heatmap.png', heatmap_img) 
+                    
                     if data in self.distance_dict and corner_points == self.distance_dict[data][0]:
                         distance = self.distance_dict[data][1]
                     else:
                         undistorted_coordinates = cv2.undistortPoints(np.array([points], dtype='float32'),
                                                                     self.camera_matrix, self.dist_coeffs)
                         print('bbbbbbbbbbbbb')
-                        print(undistorted_coordinates, points[0])
+                        print(undistorted_coordinates, points)
                         distance = self.calculate_distance(self.obj_real_size, undistorted_coordinates)
                         self.distance_dict[data] = [corner_points, distance]
 
@@ -143,6 +171,7 @@ class CameraProcessor:
                             "distance": distance
                         })
                         print(f"| {self.camera_id:10} | {timestamp:30} | {data:9}  | {corner_points:30} | {distance:.2f} mm")
+                        
 
             print('|', ' ' * 87, '|')
             print('-' * 89)
@@ -187,7 +216,6 @@ if __name__ == "__main__":
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-
 
     except KeyboardInterrupt:
         pass
