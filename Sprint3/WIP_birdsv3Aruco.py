@@ -114,17 +114,10 @@ class CameraProcessor:
     
     def draw_heatmap(self, center_point, data, heatmap_img):
         #opencv doesnt like variable colors so here we are
-        dot_colors = (0,0,0)
-        if data == 1:
-            dot_colors = (255, 0, 0)
-        elif data == 2:
-            dot_colors = (0, 255, 0)
-        elif data == 3:
-            dot_colors = (0, 0, 255)
-        elif data == 4:
-            dot_colors = (255, 255, 0)
-        elif data == 5:
-            dot_colors = (0, 255, 255)
+        #NEED TO MAKE DOT COLORS MORE DISTINCT
+        dot_colors = (51,51,51)
+        dot_colors = tuple(int(data*inc) for inc in dot_colors)
+        print(dot_colors)
 
         return cv2.circle(heatmap_img, tuple(center_point.round().astype(int)), radius=0, color=dot_colors, thickness=-5)
 
