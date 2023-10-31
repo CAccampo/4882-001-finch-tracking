@@ -5,10 +5,15 @@ import numpy as np
 import time
 from datetime import datetime
 from google.cloud import bigquery
+from google.oauth2 import service_account
 
-CALIBRATION_IMAGE_PATH = ["path_to_calibration_image1.png"]
+# CALIBRATION_IMAGE_PATH = ["/app/calib_img.png"]
+CALIBRATION_IMAGE_PATH = ["Sprint3/calib_img.png"]
 UPLOAD_INTERVAL = 10
-NUM_CAMERAS = 4
+NUM_CAMERAS = 1
+# credentials = service_account.Credentials.from_service_account_file(
+#         '/app/finch-project-399922-0196b8dd1667.json'
+#     )
 
 class CameraProcessor:
     def __init__(self, camera_id, frame_queue, project_id, dataset_id):
@@ -62,32 +67,39 @@ class CameraProcessor:
         return fx, fy, cx, cy, dist
 
     def initialize_bigquery(self, project_id, dataset_id):
-        table_name = 'new_coords_table'
+        table_name = 'finch_v4_table'
+        # client = bigquery.Client(project=project_id, credentials = credentials)
         client = bigquery.Client(project=project_id)
         try:
             table = client.get_table(f"{project_id}.{dataset_id}.{table_name}")
-            print(f"Using existing table: {table_name}")
+            print(f"Uqing existing table: {table_name}")
         except Exception as e:
-            table = client.create_table(
-                bigquery.Table(f"{project_id}.{dataset_id}.{table_name}"),
-                schema=[bigquery.SchemaField("camera_id", "STRING", mode="REQUIRED"),
-                        bigquery.SchemaField("timestamp", "STRING", mode="REQUIRED"),
-                        bigquery.SchemaField("data", "STRING", mode="REQUIRED"),
-                        bigquery.SchemaField("corner_points", "STRING", mode="REQUIRED"),
-                        bigquery.SchemaField("distance", "FLOAT", mode="REQUIRED")
-                        ],
-                exists_ok=True
-            )
+            schema = [
+            bigquery.SchemaField("camera_id", "STRING", mode="REQUIRED"),
+            bigquery.SchemaField("timestamp", "STRING", mode="REQUIRED"),
+            bigquery.SchemaField("data", "STRING", mode="REQUIRED"),
+            bigquery.SchemaField("corner_points", "STRING", mode="REQUIRED"),
+            bigquery.SchemaField("distance", "FLOAT", mode="REQUIRED")
+        ]
+            table = bigquery.Table(f"{project_id}.{dataset_id}.{table_name}", schema=schema)
+            table = client.create_table(table)
             print(f"Created table: {table_name}")
         return client, table
 
     def detect_qr_codes(self, frame):
-        decoded_objects = self.qr_code_detector.detectAndDecodeMulti(frame)
+        retval, decoded_info, points, _ = self.qr_code_detector.detectAndDecodeMulti(frame)
+        decoded_objects = []
+        if retval:
+            for info, point in zip(decoded_info, points):
+                decoded_objects.append((info, point))
         return decoded_objects
 
     def calculate_distance(self, obj_real_size, undistorted_coords):
         obj_pixel_size = self.obj_pixel_size(undistorted_coords)
-        distance = (obj_real_size * self.fx) / obj_pixel_size
+        if obj_pixel_size == 0:
+            distance = 3.5
+        else: 
+            distance = (obj_real_size * self.fx) / obj_pixel_size
         return distance
 
     def obj_pixel_size(self, undistorted_coords):
@@ -104,22 +116,27 @@ class CameraProcessor:
                 break
 
             decoded_objects = self.detect_qr_codes(frame)
+            if not decoded_objects:
+                continue  # Skip printing if no QR codes are detected
 
-            print('-' * 89)
-            print('|', ' ' * 87, '|')
+            print(f'Camera {self.camera_id}: Detected QR codes')
 
             for obj in decoded_objects:
-                data = obj[0]
-                points = obj[1]
+                data, points = obj
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
                 corner_points = ' '.join([f'({x}, {y})' for x, y in points])
 
                 if data in self.distance_dict and corner_points == self.distance_dict[data][0]:
                     distance = self.distance_dict[data][1]
+                    # if distance > 1000:
+                    #     distance = 0
+                
                 else:
                     undistorted_coordinates = cv2.undistortPoints(np.array([points[0]], dtype='float32'),
                                                                  self.camera_matrix, self.dist_coeffs)
                     distance = self.calculate_distance(self.obj_real_size, undistorted_coordinates)
+                    if distance > 1000:
+                        distance = 3.5
                     self.distance_dict[data] = [corner_points, distance]
 
                 with self.data_lock:
@@ -130,57 +147,51 @@ class CameraProcessor:
                         "corner_points": corner_points,
                         "distance": distance
                     })
-                    print(f"| {self.camera_id:10} | {timestamp:30} | {data:9}  | {corner_points:30} | {distance:.2f} mm")
-
-            print('|', ' ' * 87, '|')
-            print('-' * 89)
 
             self.frame_queue.task_done()
 
-    def stop_processing(self):
-        self.frame_queue.put(None)
-        self.processing_thread.join()
-        self.upload_thread.join()
-
     def upload_data(self):
         while True:
-            time.sleep(UPLOAD_INTERVAL)
+            time.sleep(UPLOAD_INTERVAL)  # Sleep for UPLOAD_INTERVAL seconds before proceeding
             with self.data_lock:
                 if not self.batched_data:
                     continue
+
                 data_to_insert = self.batched_data.copy()
                 self.batched_data.clear()
 
-            errors = self.client.insert_rows_json(self.table, data_to_insert)
-            if errors:
-                print(f"Encountered errors while inserting rows: {errors}")
-            else:
-                print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
+            try:
+                errors = self.client.insert_rows_json(self.table, data_to_insert)
+                if errors:
+                    print(f"Encountered errors while inserting rows: {errors}")
+                else:
+                    print(f"Data successfully uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
+            except Exception as e:
+                print(f"Failed to upload data: {str(e)}")
 
 if __name__ == "__main__":
-    frame_queues = [queue.Queue() for _ in range(NUM_CAMERAS)]
+    frame_queues = [queue.Queue(maxsize=1) for _ in range(NUM_CAMERAS)]  # Set maxsize to 1
     camera_processors = [CameraProcessor(i, frame_queues[i], 'finch-project-399922', 'finch_beta_table') for i in range(NUM_CAMERAS)]
 
-    caps = [cv2.VideoCapture(i) for i in range(NUM_CAMERAS)]
-
+    cap = cv2.VideoCapture(1)
     try:
         while True:
             for i in range(NUM_CAMERAS):
-                ret, frame = caps[i].read()
+                ret, frame = cap.read()
                 if ret:
+                    if not frame_queues[i].empty():
+                        try:
+                            frame_queues[i].get_nowait()  # Remove old frame if exists
+                        except queue.Empty:
+                            pass
                     frame_queues[i].put(frame)
-
-                if frame_queues[i].qsize() > 1:
-                    frame_queues[i].get()
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-
     except KeyboardInterrupt:
         pass
-
-    for processor in camera_processors:
-        processor.stop_processing()
-
-    for cap in caps:
+    finally:
+        for processor in camera_processors:
+            processor.stop_processing()
         cap.release()
+        cv2.destroyAllWindows()
