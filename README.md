@@ -52,7 +52,7 @@ where:
 
 ## Sprint 3
 
-- In Sprint three, the focus was to get a product deployed on the RPi that could read QR codes at a rate of 60fps. The code was having difficulty reading that fast from a live video feed. The solution to this problem was to create a queue for each camera. The queue's responsibility is to do the actual processing of the individual frames. This allows the processing to be done in semi-real time without having to store all of the images. Another problem we were dealing with was library installation compatibility with the RPi. The solution to this problem was to package all the components into a Docker image that could be deployed onto the RPi. This solution will also assist us in making our project as reproducible and easily deployable for our client.
+- In Sprint three, the focus is to get a product deployed on the RPi that could read QR codes at a rate of 60fps. The code was having difficulty reading that fast from a live video feed. The solution to this problem was to create a queue for each camera. The queue's responsibility is to do the actual processing of the individual frames. This allows the processing to be done in semi-real time without having to store all of the images. Another problem we were dealing with was library installation compatibility with the RPi. The solution to this problem was to package all the components into a Docker image that could be deployed onto the RPi. This solution will also assist us in making our project as reproducible and easily deployable for our client.
 
 ## Project Structure
 
