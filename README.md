@@ -33,7 +33,7 @@ where:
 - `corner points`: the x and y coordinates of the corners of the detected QR code within the frame.
 - `distance`: the calculated distance between the QR code and the camera.
 
-### Sprint 2 Achievements (🏆)
+### Sprint 2 Achievements 🏆
 
 - Tested detection on both live video feed and individual images.
 - Booted the operating system on the RPi.
