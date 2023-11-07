@@ -29,7 +29,6 @@ class CameraProcessor:
         self.batched_data = []
         self.data_lock = threading.Lock()
         self.client, self.table = self.initialize_bigquery(self.project_id, self.dataset_id)
-        print('zzzzzzzzz', self.table)
         self.camera_matrix = np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32)
         self.obj_real_size = 20
         self.aruco_detector = cv2.aruco.ArucoDetector(ARU_DICT, ARU_PARAMS)
@@ -91,7 +90,6 @@ class CameraProcessor:
     def calculate_distance(self, obj_real_size, undistorted_coords):
         obj_pixel_size = self.obj_pixel_size(undistorted_coords)
         distance = (obj_real_size * self.fx) / obj_pixel_size
-        print('aaaaaaaaa')
         print(obj_pixel_size, obj_real_size, self.fx, distance)
         return distance
 
@@ -99,7 +97,6 @@ class CameraProcessor:
         rect = cv2.minAreaRect(undistorted_coords)
         width = rect[1][0]
         height = rect[1][1]
-        print('cccccc')
         print(rect, width, height)
         obj_pixel_size = max(width, height)
         return obj_pixel_size
@@ -118,7 +115,8 @@ class CameraProcessor:
             if aru_decoded is not None:
                 for index, data in enumerate(aru_decoded):
                     points = np.int32(aru_points)[index][0]
-                    data = data[0]
+                    #.item() needed to convert numpy inc to int bc dump to json does not like numpy
+                    data = data[0].item()
 
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
 
@@ -129,8 +127,6 @@ class CameraProcessor:
                     else:
                         undistorted_coordinates = cv2.undistortPoints(np.array([points], dtype='float32'),
                                                                     self.camera_matrix, self.dist_coeffs)
-                        print('bbbbbbbbbbbbb')
-                        print(undistorted_coordinates, points[0])
                         distance = self.calculate_distance(self.obj_real_size, undistorted_coordinates)
                         self.distance_dict[data] = [corner_points, distance]
 
@@ -162,7 +158,6 @@ class CameraProcessor:
                     continue
                 data_to_insert = self.batched_data.copy()
                 self.batched_data.clear()
-
             errors = self.client.insert_rows_json(self.table, data_to_insert)
             if errors:
                 print(f"Encountered errors while inserting rows: {errors}")
