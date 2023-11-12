@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from google.cloud import bigquery
 
-CALIBRATION_IMAGE_PATH = ["Sprint3\calib_img.png"]
+CALIBRATION_IMAGE_PATH = ["calib_img.png"]
 UPLOAD_INTERVAL = 10
 NUM_CAMERAS = 1
 
@@ -164,7 +164,7 @@ class CameraProcessor:
             else:
                 print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
 
-if __name__ == "__main__":
+def main():
     frame_queues = [queue.Queue() for _ in range(NUM_CAMERAS)]
     camera_processors = [CameraProcessor(i, frame_queues[i], 'finch-project-399922', 'finch_beta_table') for i in range(NUM_CAMERAS)]
 
@@ -192,3 +192,5 @@ if __name__ == "__main__":
 
     for cap in caps:
         cap.release()
+#remove before freezing
+main()
