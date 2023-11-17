@@ -1,1 +1,1 @@
-PiSide_1CAM_TEST_LINUX filter=lfs diff=lfs merge=lfs -text
+PiSide_1CAM_TEST_LINUX.zip filter=lfs diff=lfs merge=lfs -text
