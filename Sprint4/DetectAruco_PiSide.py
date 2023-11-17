@@ -180,8 +180,6 @@ def main():
                 if frame_queues[i].qsize() > 1:
                     frame_queues[i].get()
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
 
 
     except KeyboardInterrupt:
