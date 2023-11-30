@@ -1,0 +1,11 @@
+{
+    "calibration_image_paths": ["calib_img.png"],
+    "upload_interval": 10,
+    "num_cameras": 1,
+    "bigquery_project_id": "finch-project-399922",
+    "bigquery_dataset_id": "finch_beta_table",
+    "table_name": "new_coords_table",
+    "aruco_dictionary": "DICT_4X4_250",
+    "obj_real_size": 20,
+    "chessboard_size": [7, 6]
+}

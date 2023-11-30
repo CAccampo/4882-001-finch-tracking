@@ -5,36 +5,35 @@ import numpy as np
 import time
 from datetime import datetime
 from google.cloud import bigquery
+import json
 
-CALIBRATION_IMAGE_PATH = ["calib_img.png"]
-UPLOAD_INTERVAL = 10
-NUM_CAMERAS = 1
-
-#setup dictionary and params for aruco detection
-ARU_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
-ARU_PARAMS = cv2.aruco.DetectorParameters()
+# Load configuration from JSON file
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
 
 class CameraProcessor:
     def __init__(self, camera_id, frame_queue, project_id, dataset_id):
         self.camera_id = camera_id
         self.frame_queue = frame_queue
-        self.project_id = project_id
-        self.dataset_id = dataset_id
 
         self.distance_dict = {}
         self.terminal_lock = threading.Lock()
-        self.chessboard_size = (7, 6)
-        self.image_paths = CALIBRATION_IMAGE_PATH
+        self.chessboard_size = tuple(config['chessboard_size'])
+        self.image_paths = config['calibration_image_paths']
         self.fx, self.fy, self.cx, self.cy, self.dist_coeffs = self.calibrate_camera()
         self.batched_data = []
         self.data_lock = threading.Lock()
-        self.client, self.table = self.initialize_bigquery(self.project_id, self.dataset_id)
+        self.client, self.table = self.initialize_bigquery(config['bigquery_project_id'], config['bigquery_dataset_id'])
         self.camera_matrix = np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32)
-        self.obj_real_size = 20
-        self.aruco_detector = cv2.aruco.ArucoDetector(ARU_DICT, ARU_PARAMS)
+        self.obj_real_size = config['obj_real_size']
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, config['aruco_dictionary']))
+        self.aruco_params = cv2.aruco.DetectorParameters()
 
         self.upload_thread = threading.Thread(target=self.upload_data, daemon=True)
         self.upload_thread.start()
+        print(f'Model Loaded for Camera {self.camera_id}')
+        self.processing_thread = threading.Thread(target=self.process_frames)
+        self.processing_thread.start()
 
         print(f'Model Loaded for Camera {self.camera_id}')
 
@@ -165,10 +164,10 @@ class CameraProcessor:
                 print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
 
 def main():
-    frame_queues = [queue.Queue() for _ in range(NUM_CAMERAS)]
-    camera_processors = [CameraProcessor(i, frame_queues[i], 'finch-project-399922', 'finch_beta_table') for i in range(NUM_CAMERAS)]
+    frame_queues = [queue.Queue() for _ in range(config['num_cameras'])]
+    camera_processors = [CameraProcessor(i, frame_queues[i]) for i in range(config['num_cameras'])]
 
-    caps = [cv2.VideoCapture(i) for i in range(NUM_CAMERAS)]
+    caps = [cv2.VideoCapture(i) for i in range(config['num_cameras'])]
 
     try:
         while True:
