@@ -8,11 +8,11 @@ from google.cloud import bigquery
 import json
 
 # Load configuration from JSON file
-with open('config.json', 'r') as config_file:
+with open('Sprint4/config.json', 'r') as config_file:
     config = json.load(config_file)
 
 class CameraProcessor:
-    def __init__(self, camera_id, frame_queue, project_id, dataset_id):
+    def __init__(self, camera_id, frame_queue):
         self.camera_id = camera_id
         self.frame_queue = frame_queue
 
@@ -27,7 +27,8 @@ class CameraProcessor:
         self.camera_matrix = np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32)
         self.obj_real_size = config['obj_real_size']
         self.aruco_dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, config['aruco_dictionary']))
-        self.aruco_params = cv2.aruco.DetectorParameters()
+        self.aruco_params = cv2.aruco.DetectorParameters(self.aruco_dict)
+        self.aruco_detector = cv2.aruco.ArucoDetector(config['aruco_dictionary'], cv2.aruco.DetectorParameters(self.aruco_params))
 
         self.upload_thread = threading.Thread(target=self.upload_data, daemon=True)
         self.upload_thread.start()
@@ -151,7 +152,7 @@ class CameraProcessor:
 
     def upload_data(self):
         while True:
-            time.sleep(UPLOAD_INTERVAL)
+            time.sleep(15)
             with self.data_lock:
                 if not self.batched_data:
                     continue
@@ -171,7 +172,7 @@ def main():
 
     try:
         while True:
-            for i in range(NUM_CAMERAS):
+            for i in range(config['num_cameras']):
                 ret, frame = caps[i].read()
                 if ret:
                     frame_queues[i].put(frame)
