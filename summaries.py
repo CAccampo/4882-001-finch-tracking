@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from google.cloud import bigquery
 from datetime import datetime, timedelta
 
@@ -18,6 +19,7 @@ def get_data_for_interval(start_time, end_time):
         WHERE timestamp BETWEEN '{start_time}' AND '{end_time}'
         ORDER BY timestamp
     """
+    print(client.query(query).result())
     return client.query(query).result()
 
 def get_center_from_corner_points(corner_points):
