@@ -8,6 +8,7 @@ config_path = 'config.json'
 window = tk.Tk()
 window.geometry('490x400')
 window.title('SetupFinchConfig')
+window.resizable(False,False)
 calib_path, cb_size, dict_type, proj_id, data_id, table_name = tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar(), tk.StringVar()
 #Intvar appending 0s for some reason
 up_int, num_cams, code_size = tk.StringVar(),tk.StringVar(),tk.StringVar()
