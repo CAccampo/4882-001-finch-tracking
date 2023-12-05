@@ -5,10 +5,11 @@ import numpy as np
 import time
 from datetime import datetime
 from google.cloud import bigquery
+from SetupConfig import win_loop
 import json
 
 # Load configuration from JSON file
-with open('Sprint4/config.json', 'r') as config_file:
+with open('config.json', 'r') as config_file:
     config = json.load(config_file)
 
 class CameraProcessor:
@@ -26,18 +27,13 @@ class CameraProcessor:
         self.client, self.table = self.initialize_bigquery(config['bigquery_project_id'], config['bigquery_dataset_id'])
         self.camera_matrix = np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32)
         self.obj_real_size = config['obj_real_size']
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(getattr(cv2.aruco, config['aruco_dictionary']))
-        self.aruco_params = cv2.aruco.DetectorParameters(self.aruco_dict)
-        self.aruco_detector = cv2.aruco.ArucoDetector(config['aruco_dictionary'], cv2.aruco.DetectorParameters(self.aruco_params))
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
+        self.aruco_params = cv2.aruco.DetectorParameters()
+        self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
 
         self.upload_thread = threading.Thread(target=self.upload_data, daemon=True)
         self.upload_thread.start()
         print(f'Model Loaded for Camera {self.camera_id}')
-        self.processing_thread = threading.Thread(target=self.process_frames)
-        self.processing_thread.start()
-
-        print(f'Model Loaded for Camera {self.camera_id}')
-
         self.processing_thread = threading.Thread(target=self.process_frames)
         self.processing_thread.start()
 
@@ -47,14 +43,13 @@ class CameraProcessor:
         objp = np.zeros((self.chessboard_size[0] * self.chessboard_size[1], 3), np.float32)
         objp[:, :2] = np.mgrid[0:self.chessboard_size[0], 0:self.chessboard_size[1]].T.reshape(-1, 2)
 
-        for image_path in self.image_paths:
-            image = cv2.imread(image_path)
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            ret, corners = cv2.findChessboardCorners(gray, self.chessboard_size, None)
+        image = cv2.imread(self.image_paths)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        ret, corners = cv2.findChessboardCorners(gray, self.chessboard_size, None)
 
-            if ret:
-                obj_points.append(objp)
-                img_points.append(corners)
+        if ret:
+            obj_points.append(objp)
+            img_points.append(corners)
 
         ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(obj_points, img_points, gray.shape[::-1], None, None)
 
@@ -165,7 +160,9 @@ class CameraProcessor:
                 print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
 
 def main():
+    win_loop()
     frame_queues = [queue.Queue() for _ in range(config['num_cameras'])]
+
     camera_processors = [CameraProcessor(i, frame_queues[i]) for i in range(config['num_cameras'])]
 
     caps = [cv2.VideoCapture(i) for i in range(config['num_cameras'])]
@@ -179,8 +176,6 @@ def main():
 
                 if frame_queues[i].qsize() > 1:
                     frame_queues[i].get()
-
-
 
     except KeyboardInterrupt:
         pass
