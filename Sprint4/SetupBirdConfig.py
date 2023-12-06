@@ -4,7 +4,7 @@ import customtkinter as ck
 import json
 
 config_list = []
-config_path = 'bird_config.json'
+bird_config_path = 'bird_config.json'
 ck.set_appearance_mode('dark')
 
 window = ck.CTk()
@@ -20,8 +20,6 @@ def add_birds(config, config_entry):
 
     print('Changed bird number; now',num_birds)
     save_config(config)
-def item_loop():
-    pass
 
 def update_config(config, config_entry):
     for i, key in enumerate(config.keys()):
@@ -36,10 +34,11 @@ def update_config(config, config_entry):
         config[key]=curr_config_entry
     
     save_config(config)
+    #add_birds(config, config_entry)
 
 def bird_win_loop():
     ps = 10
-    config = load_config()
+    config = load_config(bird_config_path)
     config_entry = []
     for i in range(len(config)):
         config_entry.append(tk.StringVar())
@@ -55,16 +54,15 @@ def bird_win_loop():
         curr_entry.insert(0, val)
     ttk.Separator(window,orient='horizontal').grid(row=len(config)+1, columnspan = 2,sticky='ew', pady=ps)
     ck.CTkButton(window,text = 'Update', command = lambda: update_config(config, config_entry)).grid(row=len(config)+2, columnspan =2, pady=10)
-    ck.CTkButton(window,text = 'Change', width=10 ,command = lambda: add_birds(config, config_entry)).grid(row=1, column=2)
 
     window.mainloop()
 
-def load_config():
-    with open(config_path, 'r') as config_file:
+def load_config(config):
+    with open(config, 'r') as config_file:
         return json.load(config_file)
 
 def save_config(config):
-    with open(config_path, 'w') as config_file:
+    with open(config, 'w') as config_file:
         json.dump(config, config_file, indent=4)
         print("Configuration saved successfully.")
 
