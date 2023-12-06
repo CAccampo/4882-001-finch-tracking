@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import customtkinter as ck
 import json
-from SetupBirdConfig import bird_win_loop, update_config, save_config, load_config
+from SetupBirdConfig import bird_win_loop, update_config, load_config
 
 config_list = []
 config_path = 'config.json'
@@ -30,13 +30,14 @@ def win_loop():
         curr_entry = ck.CTkEntry(window, textvariable=config_entry[i])
         curr_entry.grid(row=i+1, column=1, padx=(ps), pady=2)
         curr_entry.insert(0, val)
+
     ttk.Separator(window,orient='horizontal').grid(row=len(config)+1, columnspan = 2,sticky='ew', pady=ps)
-    ck.CTkButton(window,text = 'Update', command = lambda: update_config(config, config_entry)).grid(row=len(config)+2, columnspan =2, pady=10)
+    ck.CTkButton(window,text = 'Update', command = lambda: update_config(config, config_entry, config_path)).grid(row=len(config)+2, columnspan =2, pady=10)
 
     #Right Side ArUco Config
     ck.CTkLabel(window, text='ArUco Barcode', font=('Times', 20)).grid(row=0, column = 2, columnspan=2)
     ck.CTkLabel(window, text='Dictionary Type: DICT_4X4_250').grid(row=1, column = 2, columnspan=2)
-    ck.CTkButton(window,text = 'Set Bird IDs', command = bird_win_loop).grid(row=2, column=2, columnspan =2)
+    #ck.CTkButton(window,text = 'Set Bird IDs', command = bird_win_loop).grid(row=2, column=2, columnspan =2)
 
     window.mainloop()
 
