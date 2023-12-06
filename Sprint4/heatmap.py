@@ -52,12 +52,11 @@ if __name__ == "__main__":
     result = get_data()
     data = []
 
-    for row in result:
+    for _, row in result.iterrows():
         corner_point_list = [
             [int(coord) for coord in pair.replace('(', '').replace(')', '').split(",")]
             for pair in row.corner_points.split(") (")
         ]
-        data.append([row.data, corner_point_list, row.distance])
 
     columns = ['data', 'corner_points', 'distance']
     df = pd.DataFrame(data, columns=columns)
