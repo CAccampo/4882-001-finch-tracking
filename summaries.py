@@ -19,11 +19,14 @@ def get_data_for_interval(start_time, end_time):
         WHERE timestamp BETWEEN '{start_time}' AND '{end_time}'
         ORDER BY timestamp
     """
-    print(client.query(query).result())
+    
     return client.query(query).result()
 
 def get_center_from_corner_points(corner_points):
-    points = [tuple(map(float, point.strip('()').split(','))) for point in corner_points.split()]
+    points = [
+        [int(coord) for coord in pair.replace('(', '').replace(')', '').split(",")]
+        for pair in corner_points.split(") (")
+    ]
     x_center = sum(point[0] for point in points) / len(points)
     y_center = sum(point[1] for point in points) / len(points)
     return x_center, y_center
