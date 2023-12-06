@@ -1,17 +1,18 @@
 import os
 from google.cloud import bigquery
 import pandas as pd
-import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from datetime import datetime, timedelta
+import json
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'finch-project-399922-0196b8dd1667.json'
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
 
-PROJECT_ID = 'finch-project-399922'
-DATASET_ID = 'finch_beta_table'
-TABLE_ID = 'new_coords_table'
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['CREDENTIALS']
+PROJECT_ID = config['bigquery_project_id']
+DATASET_ID = config['bigquery_dataset_id']
+TABLE_ID = config['table_name']
 
 client = bigquery.Client(project=PROJECT_ID)
 
@@ -41,7 +42,7 @@ def update_heatmap(frame, data, ax):
         row = data.iloc[i]
         corner_points = np.array(row['corner_points'])
         center_point = calculate_center_point(corner_points)
-        ax.plot(center_point[0], center_point[1], 'ro')  # 'ro' means red color, circular marker
+        ax.plot(center_point[0], center_point[1], 'ro')
 
     ax.set_title(f'Accumulated Frames up to {frame}')
     ax.set_xlabel('X-axis')
@@ -63,4 +64,6 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     ani = FuncAnimation(fig, update_heatmap, fargs=(df, ax), frames=len(df), repeat=False)
+
+    ani.save('heatmap.gif', writer='imagemagick')
     plt.show()

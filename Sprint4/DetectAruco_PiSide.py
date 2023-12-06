@@ -7,11 +7,13 @@ from datetime import datetime
 from google.cloud import bigquery
 from SetupConfig import win_loop
 import json
+import os
+
 
 # Load configuration from JSON file
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
-
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['CREDENTIALS']
 class CameraProcessor:
     def __init__(self, camera_id, frame_queue):
         self.camera_id = camera_id
