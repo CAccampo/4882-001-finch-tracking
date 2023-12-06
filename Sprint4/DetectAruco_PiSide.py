@@ -13,7 +13,11 @@ import os
 # Load configuration from JSON file
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['CREDENTIALS']
+
+# quick fix to format chessboard type correctly from config)
+config['chessboard_size'] = [eval(i) for i in config['chessboard_size'].split()]
+
+#os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['CREDENTIALS']
 class CameraProcessor:
     def __init__(self, camera_id, frame_queue):
         self.camera_id = camera_id
