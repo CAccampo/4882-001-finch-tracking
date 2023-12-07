@@ -26,7 +26,10 @@ def save_and_display(config, config_p, window):
 def display_ids(window):
     loc_bird_config = load_config(bird_config_path)
     for id_label in id_labels:
-        id_label.grid_remove()
+        try:
+            id_label.grid_remove()
+        except tk.TclError:
+            pass
     for i, item in enumerate(loc_bird_config.items()):
         key, val = item
         id_labels.append(ck.CTkLabel(window, text=f'{key}\t\t{val}'))
