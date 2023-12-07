@@ -40,6 +40,8 @@ def win_loop():
     ck.CTkLabel(window, text='Dictionary Type: DICT_4X4_250').grid(row=1, column = 2, columnspan=2)
     ck.CTkButton(window, text = 'Set Bird IDs', command = lambda: bird_win_loop(window)).grid(row=2, column=2, columnspan =2)
 
+    ck.CTkButton(window,text = 'Start Recording', command = window.destroy, fg_color=('lightgray'),text_color=('black'), font=('Roboto',18), height=40).grid(row=len(config)+2, column=2, pady=10)
+
     window.mainloop()
 
 if __name__ == "__main__":
