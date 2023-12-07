@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import customtkinter as ck
+from customtkinter import CTkToplevel
 import json
 
 config_list = []
@@ -23,15 +24,16 @@ def get_birds():
 
 
 def add_birds(config):
-    num_birds = get_birds()
+    num_config_birds = get_birds()
+
     i = len(config)
-    while num_birds > len(config):
+    while num_config_birds > len(config):
         i = i+1
         config[i] = i
-    while num_birds < len(config):
+    while num_config_birds < len(config):
         config.popitem()
 
-    print('Changed bird number; now',num_birds)
+    print('Changed bird number; now',len(config))
     save_config(config, bird_config_path)
 
 def update_config(config, config_entry, config_p):
@@ -46,20 +48,18 @@ def update_config(config, config_entry, config_p):
             except ValueError:
                 pass
         config[key]=curr_config_entry
-    
-    save_config(config, config_p)
     if config_p == bird_config_path:
         add_birds(config)
+    save_config(config, config_p)
 
-def bird_win_loop():
-    birdwin = ck.CTk()
-    win_size = '260x'+str(get_birds()*50+50)
+def bird_win_loop(window):
+    birdwin = CTkToplevel(window)
+    win_size = '260x'+str(get_birds()*30+150)
     birdwin.geometry(win_size)
     birdwin.title('SetupBirdConfig')
     
     ps = 10
     config = load_config(bird_config_path)
-    add_birds(config)
 
     config_entry = []
     for i in range(len(config)):
