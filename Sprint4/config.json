@@ -1,5 +1,6 @@
 {
-    "calibration_image_paths": ["calib_img.png"],
+    "num_birds": 10,
+    "calibration_image_paths": "calib_img.png",
     "upload_interval": 10,
     "num_cameras": 1,
     "bigquery_project_id": "finch-project-399922",
@@ -7,9 +8,8 @@
     "table_name": "newest_coords_table",
     "aruco_dictionary": "DICT_4X4_250",
     "obj_real_size": 20,
-    "chessboard_size": [7, 6],
+    "chessboard_size": "7 6",
     "SAFE_DISTANCE": 6,
     "INACTIVITY_THRESHOLD": 0.5,
-    "VERY_ACTIVE_DISTANCE": 10,
-    "CREDENTIALS": "finch-project-399922-0196b8dd1667.json"
+    "VERY_ACTIVE_DISTANCE": 10
 }
