@@ -2,19 +2,19 @@ import tkinter as tk
 from tkinter import ttk
 import customtkinter as ck
 import json
-from SetupBirdConfig import bird_win_loop, update_config, load_config
+from SetupBirdConfig import bird_win_loop, load_config, update_config
 
 config_list = []
 config_path = 'config.json'
 bird_config_path = 'bird_config.json'
 ck.set_appearance_mode('dark')
 
-window = ck.CTk()
-window.geometry('520x600')
-window.title('SetupConfig')
-window.resizable(False,False)
-
 def win_loop():
+    window = ck.CTk()
+    window.geometry('520x600')
+    window.title('SetupConfig')
+    window.resizable(False,False)
+
     ps = 10
     config = load_config(config_path)
     config_entry = []
@@ -37,7 +37,7 @@ def win_loop():
     #Right Side ArUco Config
     ck.CTkLabel(window, text='ArUco Barcode', font=('Times', 20)).grid(row=0, column = 2, columnspan=2)
     ck.CTkLabel(window, text='Dictionary Type: DICT_4X4_250').grid(row=1, column = 2, columnspan=2)
-    #ck.CTkButton(window,text = 'Set Bird IDs', command = bird_win_loop).grid(row=2, column=2, columnspan =2)
+    ck.CTkButton(window,text = 'Set Bird IDs', command = bird_win_loop).grid(row=2, column=2, columnspan =2)
 
     window.mainloop()
 

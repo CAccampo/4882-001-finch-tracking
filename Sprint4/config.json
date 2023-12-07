@@ -1,8 +1,8 @@
 {
+    "num_birds": 10,
     "calibration_image_paths": "calib_img.png",
     "upload_interval": 10,
     "num_cameras": 1,
-    "num_birds": 5,
     "bigquery_project_id": "finch-project-399922",
     "bigquery_dataset_id": "finch_beta_table",
     "table_name": "newest_coords_table",
