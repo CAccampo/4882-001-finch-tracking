@@ -8,14 +8,24 @@ from google.cloud import bigquery
 from SetupConfig import win_loop
 import json
 import os
+from SetupBirdConfig import load_config
 
 
 # Load configuration from JSON file
-with open('config.json', 'r') as config_file:
-    config = json.load(config_file)
+config = load_config('config.json')
 
 # quick fix to format chessboard type correctly from config)
 config['chessboard_size'] = [eval(i) for i in config['chessboard_size'].split()]
+
+def cvt_id(data):
+    bird_config = load_config('bird_config.json')
+    cvt_data = bird_config.get(str(data))
+    if cvt_data is not None:
+        print(f'Converted detected Code {data} to Bird ID {cvt_data}')
+        return cvt_data
+    else:
+        print(f'Code {data} not found in Bird IDs')
+        return data
 
 class CameraProcessor:
     def __init__(self, camera_id, frame_queue):
@@ -66,7 +76,7 @@ class CameraProcessor:
         return fx, fy, cx, cy, dist
 
     def initialize_bigquery(self, project_id, dataset_id):
-        table_name = 'new_coords_table'
+        table_name = config['table_name']
         client = bigquery.Client(project=project_id)
         try:
             table = client.get_table(f"{project_id}.{dataset_id}.{table_name}")
@@ -90,16 +100,15 @@ class CameraProcessor:
     def calculate_distance(self, obj_real_size, undistorted_coords):
         obj_pixel_size = self.obj_pixel_size(undistorted_coords)
         distance = (obj_real_size * self.fx) / obj_pixel_size
-        print(obj_pixel_size, obj_real_size, self.fx, distance)
         return distance
 
     def obj_pixel_size(self, undistorted_coords):
         rect = cv2.minAreaRect(undistorted_coords)
         width = rect[1][0]
         height = rect[1][1]
-        print(rect, width, height)
         obj_pixel_size = max(width, height)
         return obj_pixel_size
+    
 
     def process_frames(self):
         while True:
@@ -117,6 +126,7 @@ class CameraProcessor:
                     points = np.int32(aru_points)[index][0]
                     #.item() needed to convert numpy inc to int bc dump to json does not like numpy
                     data = data[0].item()
+                    data = cvt_id(data)
 
                     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
 
@@ -131,14 +141,17 @@ class CameraProcessor:
                         self.distance_dict[data] = [corner_points, distance]
 
                     with self.data_lock:
-                        self.batched_data.append({
-                            "camera_id": str(self.camera_id),
-                            "timestamp": timestamp,
-                            "data": data,
-                            "corner_points": corner_points,
-                            "distance": distance
-                        })
-                        print(f"| {self.camera_id:10} | {timestamp:30} | {data:9}  | {corner_points:30} | {distance:.2f} mm")
+                        try:
+                            self.batched_data.append({
+                                "camera_id": str(self.camera_id),
+                                "timestamp": str(timestamp),
+                                "data": str(data),
+                                "corner_points": str(corner_points),
+                                "distance": str(distance)
+                            })
+                        except Exception as E:
+                            print(Exception)
+                        print(f"| {self.camera_id} | {timestamp} | {data} | {corner_points} | {distance} mm")
 
             print('|', ' ' * 87, '|')
             print('-' * 89)
@@ -152,10 +165,10 @@ class CameraProcessor:
 
     def upload_data(self):
         while True:
-            time.sleep(15)
+            time.sleep(5)
             with self.data_lock:
                 if not self.batched_data:
-                    continue
+                    break
                 data_to_insert = self.batched_data.copy()
                 self.batched_data.clear()
             errors = self.client.insert_rows_json(self.table, data_to_insert)
@@ -183,8 +196,8 @@ def main():
                     frame_queues[i].get()
 
     except KeyboardInterrupt:
+        print('Keyboard Interrupt; closing threads...')
         pass
-
     for processor in camera_processors:
         processor.stop_processing()
 
