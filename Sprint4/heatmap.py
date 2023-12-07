@@ -7,12 +7,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from datetime import datetime, timedelta
+from SetupBirdConfig import load_config
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'finch-project-399922-0196b8dd1667.json'
-
-PROJECT_ID = 'finch-project-399922'
-DATASET_ID = 'finch_beta_table'
-TABLE_ID = 'new_coords_table'
+config = load_config('config.json')
+PROJECT_ID = config['bigquery_project_id']
+DATASET_ID = config['bigquery_dataset_id']
+TABLE_ID = config['table_name']
 
 client = bigquery.Client(project=PROJECT_ID)
 
