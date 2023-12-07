@@ -54,6 +54,7 @@ def update_config(config, config_entry, config_p):
 
 def bird_win_loop(window):
     birdwin = CTkToplevel(window)
+    birdwin.attributes('-topmost',True)
     win_size = '260x'+str(get_birds()*30+150)
     birdwin.geometry(win_size)
     birdwin.title('SetupBirdConfig')
