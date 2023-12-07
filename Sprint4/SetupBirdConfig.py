@@ -8,6 +8,8 @@ config_list = []
 config_path = 'config.json'
 bird_config_path = 'bird_config.json'
 ck.set_appearance_mode('dark')
+ps = 10
+id_labels = []
 
 
 def load_config(config_p):
@@ -16,7 +18,23 @@ def load_config(config_p):
 def save_config(config, config_p):
     with open(config_p, 'w') as config_file:
         json.dump(config, config_file, indent=4)
-        print("Configuration saved successfully.")
+        #print("Configuration saved successfully.")
+def save_and_display(config, config_p, window):
+    save_config(config, config_p)
+    display_ids(window)
+
+def display_ids(window):
+    loc_bird_config = load_config(bird_config_path)
+    for id_label in id_labels:
+        id_label.grid_remove()
+    for i, item in enumerate(loc_bird_config.items()):
+        key, val = item
+        id_labels.append(ck.CTkLabel(window, text=f'{key}\t\t{val}'))
+        id_labels[-1].grid(sticky='w',row=i+3, column=2, padx=(ps,0))
+        if i > 5:
+            id_labels.append(ck.CTkLabel(window, text=f'...\t\t...'))
+            id_labels[-1].grid(sticky='w',row=i+4, column=2, padx=(ps,0))
+            break
 
 def get_birds():
     plain_config = load_config(config_path)
@@ -59,7 +77,6 @@ def bird_win_loop(window):
     birdwin.geometry(win_size)
     birdwin.title('SetupBirdConfig')
     
-    ps = 10
     config = load_config(bird_config_path)
 
     config_entry = []
@@ -78,7 +95,7 @@ def bird_win_loop(window):
         curr_entry.grid(row=i+2, column=1, padx=(ps), pady=1)
         curr_entry.insert(0, val)
     ttk.Separator(birdwin,orient='horizontal').grid(row=len(config)+2, columnspan = 2,sticky='ew', pady=ps)
-    ck.CTkButton(birdwin,text = 'Update', command = lambda: update_config(config, config_entry, bird_config_path)).grid(row=len(config)+3, columnspan =2, pady=10)
+    ck.CTkButton(birdwin,text = 'Update', command = lambda: [update_config(config, config_entry, bird_config_path), save_and_display(config, bird_config_path, window)]).grid(row=len(config)+3, columnspan =2, pady=10)
 
     birdwin.mainloop()
 

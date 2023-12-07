@@ -1,5 +1,5 @@
 {
-    "num_birds": 10,
+    "num_birds": 5,
     "calibration_image_paths": "calib_img.png",
     "upload_interval": 10,
     "num_cameras": 1,
