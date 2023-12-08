@@ -9,11 +9,10 @@ from SetupConfig import win_loop
 import json
 import os
 from SetupBirdConfig import load_config
-
+import sys
 
 # Load configuration from JSON file
 config = load_config('config.json')
-num_uploads = 0
 
 # quick fix to format chessboard type correctly from config)
 config['chessboard_size'] = [eval(i) for i in config['chessboard_size'].split()]
@@ -160,40 +159,31 @@ class CameraProcessor:
         self.frame_queue.put(None)
         self.upload_data_final()
         self.processing_thread.join()
-        self.upload_thread.join()
 
     def upload_data_final(self):
-        global num_uploads
         with self.data_lock:
-            print('BBBBBBBBBBBbb')
             if self.batched_data:
                 data_to_insert = self.batched_data.copy()
                 self.batched_data.clear()
-        print('AAAAAAAAAa')
         errors = self.client.insert_rows_json(self.table, data_to_insert)
         if errors:
             print(f"Encountered errors while inserting rows: {errors}")
         else:
             print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
-            num_uploads = num_uploads+1
     
     def upload_data(self):
-        global num_uploads
         while True:
             time.sleep(5)
             with self.data_lock:
-                print('BBBBBBBBBBBbb')
                 if not self.batched_data:
                     continue
                 data_to_insert = self.batched_data.copy()
                 self.batched_data.clear()
-            print('AAAAAAAAAa')
             errors = self.client.insert_rows_json(self.table, data_to_insert)
             if errors:
                 print(f"Encountered errors while inserting rows: {errors}")
             else:
                 print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
-                num_uploads = num_uploads+1
 
 def main():
     win_loop()
@@ -221,4 +211,6 @@ def main():
 
     for cap in caps:
         cap.release()
-    print(num_uploads)
+
+    #needed to kill daemon
+    sys.exit()
