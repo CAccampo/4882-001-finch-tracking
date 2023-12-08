@@ -13,6 +13,7 @@ from SetupBirdConfig import load_config
 
 # Load configuration from JSON file
 config = load_config('config.json')
+num_uploads = 0
 
 # quick fix to format chessboard type correctly from config)
 config['chessboard_size'] = [eval(i) for i in config['chessboard_size'].split()]
@@ -141,16 +142,13 @@ class CameraProcessor:
                         self.distance_dict[data] = [corner_points, distance]
 
                     with self.data_lock:
-                        try:
-                            self.batched_data.append({
-                                "camera_id": str(self.camera_id),
-                                "timestamp": str(timestamp),
-                                "data": str(data),
-                                "corner_points": str(corner_points),
-                                "distance": str(distance)
-                            })
-                        except Exception as E:
-                            print(Exception)
+                        self.batched_data.append({
+                            "camera_id": str(self.camera_id),
+                            "timestamp": str(timestamp),
+                            "data": str(data),
+                            "corner_points": str(corner_points),
+                            "distance": str(distance)
+                        })
                         print(f"| {self.camera_id} | {timestamp} | {data} | {corner_points} | {distance} mm")
 
             print('|', ' ' * 87, '|')
@@ -160,22 +158,42 @@ class CameraProcessor:
 
     def stop_processing(self):
         self.frame_queue.put(None)
+        self.upload_data_final()
         self.processing_thread.join()
         self.upload_thread.join()
 
+    def upload_data_final(self):
+        global num_uploads
+        with self.data_lock:
+            print('BBBBBBBBBBBbb')
+            if self.batched_data:
+                data_to_insert = self.batched_data.copy()
+                self.batched_data.clear()
+        print('AAAAAAAAAa')
+        errors = self.client.insert_rows_json(self.table, data_to_insert)
+        if errors:
+            print(f"Encountered errors while inserting rows: {errors}")
+        else:
+            print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
+            num_uploads = num_uploads+1
+    
     def upload_data(self):
+        global num_uploads
         while True:
             time.sleep(5)
             with self.data_lock:
+                print('BBBBBBBBBBBbb')
                 if not self.batched_data:
-                    break
+                    continue
                 data_to_insert = self.batched_data.copy()
                 self.batched_data.clear()
+            print('AAAAAAAAAa')
             errors = self.client.insert_rows_json(self.table, data_to_insert)
             if errors:
                 print(f"Encountered errors while inserting rows: {errors}")
             else:
                 print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
+                num_uploads = num_uploads+1
 
 def main():
     win_loop()
@@ -197,9 +215,10 @@ def main():
 
     except KeyboardInterrupt:
         print('Keyboard Interrupt; closing threads...')
-        pass
+
     for processor in camera_processors:
         processor.stop_processing()
 
     for cap in caps:
         cap.release()
+    print(num_uploads)
