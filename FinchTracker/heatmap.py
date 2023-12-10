@@ -62,7 +62,7 @@ def update_heatmap(frame, data, ax):
 
 
 
-if __name__ == "__main__":
+def main():
     result = get_data().to_dataframe()  # Convert RowIterator to DataFrame
     data = []
 
@@ -83,3 +83,6 @@ if __name__ == "__main__":
     fig, ax = plt.subplots()
     ani = FuncAnimation(fig, update_heatmap, fargs=(df, ax), frames=len(df), repeat=False)
     plt.show()
+
+if __name__ == "__main__":
+    main()
