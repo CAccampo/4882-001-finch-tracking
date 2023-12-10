@@ -5,7 +5,6 @@ import numpy as np
 import time
 from datetime import datetime
 from google.cloud import bigquery
-from SetupConfig import win_loop
 import json
 import os
 from SetupBirdConfig import load_config
@@ -17,6 +16,13 @@ config = load_config('config.json')
 # quick fix to format chessboard type correctly from config)
 config['chessboard_size'] = [eval(i) for i in config['chessboard_size'].split()]
 
+aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
+aruco_params = cv2.aruco.DetectorParameters()
+aruco_detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
+
+def get_aruco_detector():
+    return aruco_detector
+
 def cvt_id(data):
     bird_config = load_config('bird_config.json')
     cvt_data = bird_config.get(str(data))
@@ -26,6 +32,9 @@ def cvt_id(data):
     else:
         print(f'Code {data} not found in Bird IDs')
         return data
+
+def detect_qr_codes(frame):
+    return aruco_detector.detectMarkers(frame)
 
 class CameraProcessor:
     def __init__(self, camera_id, frame_queue):
@@ -42,9 +51,6 @@ class CameraProcessor:
         self.client, self.table = self.initialize_bigquery(config['bigquery_project_id'], config['bigquery_dataset_id'])
         self.camera_matrix = np.array([[self.fx, 0, self.cx], [0, self.fy, self.cy], [0, 0, 1]], dtype=np.float32)
         self.obj_real_size = config['obj_real_size']
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_250)
-        self.aruco_params = cv2.aruco.DetectorParameters()
-        self.aruco_detector = cv2.aruco.ArucoDetector(self.aruco_dict, self.aruco_params)
 
         self.upload_thread = threading.Thread(target=self.upload_data, daemon=True)
         self.upload_thread.start()
@@ -94,9 +100,6 @@ class CameraProcessor:
             print(f"Created table: {table_name}")
         return client, table
 
-    def detect_qr_codes(self, frame):
-        return self.aruco_detector.detectMarkers(frame)
-
     def calculate_distance(self, obj_real_size, undistorted_coords):
         obj_pixel_size = self.obj_pixel_size(undistorted_coords)
         distance = (obj_real_size * self.fx) / obj_pixel_size
@@ -115,8 +118,8 @@ class CameraProcessor:
             frame = self.frame_queue.get()
             if frame is None:
                 break
-
-            aru_points, aru_decoded, rejected_marker = self.detect_qr_codes(frame)
+            
+            aru_points, aru_decoded, rejected_marker = detect_qr_codes(frame)
 
             print('-' * 89)
             print('|', ' ' * 87, '|')
@@ -162,9 +165,11 @@ class CameraProcessor:
 
     def upload_data_final(self):
         with self.data_lock:
-            if self.batched_data:
-                data_to_insert = self.batched_data.copy()
-                self.batched_data.clear()
+            if not self.batched_data:
+                return None
+            data_to_insert = self.batched_data.copy()
+            self.batched_data.clear()
+
         errors = self.client.insert_rows_json(self.table, data_to_insert)
         if errors:
             print(f"Encountered errors while inserting rows: {errors}")
@@ -173,7 +178,7 @@ class CameraProcessor:
     
     def upload_data(self):
         while True:
-            time.sleep(5)
+            time.sleep(config['upload_interval'])
             with self.data_lock:
                 if not self.batched_data:
                     continue
@@ -186,7 +191,6 @@ class CameraProcessor:
                 print(f"Data uploaded to {self.table.table_id} at {datetime.utcnow().isoformat()}")
 
 def main():
-    win_loop()
     frame_queues = [queue.Queue() for _ in range(config['num_cameras'])]
 
     camera_processors = [CameraProcessor(i, frame_queues[i]) for i in range(config['num_cameras'])]

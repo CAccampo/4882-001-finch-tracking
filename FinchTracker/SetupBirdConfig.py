@@ -54,7 +54,6 @@ def add_birds(config):
     while num_config_birds < len(config):
         config.popitem()
 
-    print('Changed bird number; now',len(config))
     save_config(config, bird_config_path)
 
 def update_config(config, config_entry, config_p):
