@@ -37,7 +37,7 @@ def win_loop():
         curr_entry.insert(0, val)
 
     ttk.Separator(window,orient='horizontal').grid(row=len(config)+1, columnspan = 2,sticky='ew', pady=ps)
-    ck.CTkButton(window,text = 'Update', command = lambda: [update_config(config, config_entry, config_path), add_birds(bird_config), display_ids(window)]).grid(row=len(config)+2, columnspan =2, pady=10)
+    ck.CTkButton(window,text = 'Update', command = lambda: [update_config(config, config_entry, config_path), add_birds(), display_ids(window)]).grid(row=len(config)+2, columnspan =2, pady=10)
 
     #Right Side ArUco Config
     ck.CTkLabel(window, text='ArUco Barcode', font=('Times', 20)).grid(row=0, column=2, columnspan=2)

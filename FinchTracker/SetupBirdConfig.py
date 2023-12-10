@@ -18,7 +18,7 @@ def load_config(config_p):
 def save_config(config, config_p):
     with open(config_p, 'w') as config_file:
         json.dump(config, config_file, indent=4)
-        #print("Configuration saved successfully.")
+
 def save_and_display(config, config_p, window):
     save_config(config, config_p)
     display_ids(window)
@@ -39,22 +39,20 @@ def display_ids(window):
             id_labels[-1].grid(sticky='w',row=i+4, column=2, padx=(ps,0))
             break
 
-def get_birds():
-    plain_config = load_config(config_path)
-    return  int(plain_config['num_birds'])
 
+def add_birds():
+    bird_config = load_config(bird_config_path)
+    config = load_config(config_path)
+    num_config_birds = config['num_birds']
 
-def add_birds(config):
-    num_config_birds = get_birds()
-
-    i = len(config)
-    while num_config_birds > len(config):
+    i = len(bird_config)
+    while num_config_birds > len(bird_config):
         i = i+1
-        config[i] = i
-    while num_config_birds < len(config):
-        config.popitem()
+        bird_config[i] = i
+    while num_config_birds < len(bird_config):
+        bird_config.popitem()
+    save_config(bird_config, bird_config_path)
 
-    save_config(config, bird_config_path)
 
 def update_config(config, config_entry, config_p):
     for i, key in enumerate(config.keys()):
@@ -69,13 +67,14 @@ def update_config(config, config_entry, config_p):
                 pass
         config[key]=curr_config_entry
     if config_p == bird_config_path:
-        add_birds(config)
+        add_birds()
     save_config(config, config_p)
 
 def bird_win_loop(window):
+    bird_config = load_config(bird_config_path)
     birdwin = CTkToplevel(window)
     birdwin.attributes('-topmost',True)
-    win_size = '260x'+str(get_birds()*30+150)
+    win_size = '260x'+str(len(bird_config)*30+150)
     birdwin.geometry(win_size)
     birdwin.title('SetupBirdConfig')
     
@@ -100,6 +99,3 @@ def bird_win_loop(window):
     ck.CTkButton(birdwin,text = 'Update', command = lambda: [update_config(config, config_entry, bird_config_path), save_and_display(config, bird_config_path, window)]).grid(row=len(config)+3, columnspan =2, pady=10)
 
     birdwin.mainloop()
-
-if __name__ == "__main__":
-   bird_win_loop()
