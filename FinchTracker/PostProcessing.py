@@ -5,7 +5,6 @@ import cv2
 from heatmap import heatmap_animation, save_overall_heatmap
 from SetupBirdConfig import load_config
 import numpy as np
-import imageio.v3 as iio
 
 ps = 10
 def open_heatmap():

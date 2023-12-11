@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from datetime import datetime, timedelta
 from SetupBirdConfig import load_config
-from IPython import display 
 
 config = load_config('config.json')
 bird_config = load_config('bird_config.json')
@@ -99,15 +98,14 @@ def save_overall_heatmap():
     data = format_data()
     #deciding colors
     dot_colors = {}
-    for key, value in bird_config.items():
+    for _, value in bird_config.items():
         dot_colors[value] = np.random.randint(0,255,size=3,)
         dot_colors[value] = tuple(int(dot_colors[value][i]) for i in range(len(dot_colors[value])))
-
 
     for i in range(config['num_cameras']):
         heatmap_img = init_heatmap(i)
         for row in data:
-            if row[4]==i:
+            if int(row[4])==i:
                 heatmap_img = draw_heatmap(np.int32(row[2]).mean(0), data, heatmap_img, i, dot_colors, int(row[0]))
         cv2.imwrite(f'heatmap{i}.png', heatmap_img)
 
@@ -122,10 +120,3 @@ def format_data():
         ]
         data.append([row.data, row.timestamp, corner_point_list, row.distance, row.camera_id])
     return data
-
-def main():
-    #save_overall_heatmap()
-    heatmap_animation(10,50)
-
-if __name__ == "__main__":
-    main()
