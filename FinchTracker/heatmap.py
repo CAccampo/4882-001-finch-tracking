@@ -76,14 +76,15 @@ def heatmap_animation(start, stop):
     ani = FuncAnimation(fig, update_heatmap, fargs=(df, ax, start, stop), frames=len(df), repeat=False)
     plt.show()
 
-def init_heatmap(cam_num):
+def init_heatmap(cam_num, dot_colors):
+    #create blank white image from frame
     caps = [i for i in range(config['num_cameras'])]
     caps[cam_num] = cv2.VideoCapture(cam_num)
-    ret, frame = caps[cam_num].read()
-    #determine w/h of camera image with test frame
-
-    #create blank white image of same size
+    _, frame = caps[cam_num].read()
     heatmap_img = np.ones(frame.shape, dtype = np.uint8)
+
+    for i, (key, value) in enumerate(dot_colors.items()):
+        heatmap_img = cv2.putText(heatmap_img, str(key), org=(50*i, 50), fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=1, color=value)
 
     return 255*heatmap_img
     
@@ -103,7 +104,7 @@ def save_overall_heatmap():
         dot_colors[value] = tuple(int(dot_colors[value][i]) for i in range(len(dot_colors[value])))
 
     for i in range(config['num_cameras']):
-        heatmap_img = init_heatmap(i)
+        heatmap_img = init_heatmap(i, dot_colors)
         for row in data:
             if int(row[4])==i:
                 heatmap_img = draw_heatmap(np.int32(row[2]).mean(0), data, heatmap_img, i, dot_colors, int(row[0]))
