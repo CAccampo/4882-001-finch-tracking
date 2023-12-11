@@ -8,7 +8,6 @@ import os
 with open('config.json', 'r') as config_file:
     config = json.load(config_file)
     
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['CREDENTIALS']
 PROJECT_ID = config['bigquery_project_id']
 DATASET_ID = config['bigquery_dataset_id']
 TABLE_ID = config['table_name']

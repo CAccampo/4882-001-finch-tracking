@@ -50,4 +50,9 @@ A py file can be run from the command line with 'python [file.py]'
 
 #Testing Upload
 - On the Gcloud projects Bigquery page, go to your table by clicking on your project->dataset->table
-- Click the preview tab
+Opt 1: Click the preview tab to see if any data is making it to the table
+Opt 2: Click Query tab, open a new query, and run this command (table id should be generated for you):
+        SELECT * FROM `[your_project].[your_dataset].[your_table]` 
+        ORDER BY timestamp DESC
+        LIMIT 1000
+    - The above command will display the top 1000 most recent rows

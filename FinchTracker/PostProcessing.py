@@ -3,6 +3,7 @@ from tkinter import ttk
 import customtkinter as ck
 import cv2
 from heatmap import heatmap_animation, save_overall_heatmap
+from summaries import main as sum_main
 from SetupBirdConfig import load_config
 import numpy as np
 
@@ -37,7 +38,14 @@ def win_loop():
     ck.CTkButton(window,text = 'Show Animation', width=120, command = lambda: (heatmap_animation(start.get(), stop.get())), height=40, fg_color=('lightgray'), text_color='black').grid(sticky='w', row=3, pady=ps, padx=(ps,0))
     ck.CTkButton(window,text = 'Draw Heatmap(s)', width=120, command = save_overall_heatmap, height=40).grid(sticky='w', row=4, pady=ps, padx=ps)
     ck.CTkButton(window,text = 'Show', command = open_heatmap, height=40, width=50).grid(row=4, column=1)
-    ttk.Separator(window,orient='horizontal').grid(row=5, columnspan = 5, sticky='ew', pady=ps)
+    
+    ttk.Separator(window,orient='horizontal').grid(row=5, columnspan = 5, sticky='ew', pady=ps*2)
+
+    #currently not working
+    ck.CTkLabel(window, text='Summaries', font=('Times', 20)).grid(sticky='w',row=6, columnspan=2, padx=ps, pady=ps)
+    ck.CTkButton(window,text = 'Generate', width=120, command = sum_main, height=40).grid(sticky='w', row=7, pady=ps, padx=ps)
+    ck.CTkButton(window,text = 'Show', command = '', height=40, width=50).grid(row=7, column=1)
+
 
     window.mainloop()
 
