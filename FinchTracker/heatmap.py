@@ -37,26 +37,28 @@ def calculate_center_point(corner_points):
 
     return center_point
 
-def update_heatmap(frame, data, ax):
-    plotted_points = []
+def update_heatmap(frame, data, ax, start, stop):
+    frame = start+frame
+    if frame < len(data) and frame <= stop:
+        plotted_points = []
 
-    row = data.iloc[frame]
-    corner_points = np.array(row['corner_points'])
-    center_point = calculate_center_point(corner_points)
+        row = data.iloc[frame]
+        corner_points = np.array(row['corner_points'])
+        center_point = calculate_center_point(corner_points)
 
-    # Calculate alpha based on the time difference with increased scaling
-    first_timestamp = data['timestamp'].min()
-    time_difference = row['timestamp'] - first_timestamp
-    alpha_scaling_factor = 8.0  # Adjust the scaling factor for a more pronounced fading effect
-    alpha = 1.0 - (alpha_scaling_factor * time_difference / pd.Timedelta.max)
+        # Calculate alpha based on the time difference with increased scaling
+        first_timestamp = data['timestamp'].min()
+        time_difference = row['timestamp'] - first_timestamp
+        alpha_scaling_factor = 8.0  # Adjust the scaling factor for a more pronounced fading effect
+        alpha = 1.0 - (alpha_scaling_factor * time_difference / pd.Timedelta.max)
 
-    # Plot the point with fading effect
-    plotted_point = ax.plot(center_point[0], center_point[1], 'ro', alpha=alpha)[0]
-    plotted_points.append(plotted_point)
+        # Plot the point with fading effect
+        plotted_point = ax.plot(center_point[0], center_point[1], 'ro', alpha=alpha)[0]
+        plotted_points.append(plotted_point)
 
-    ax.set_title(f'Accumulated Frames up to {frame}')
+        ax.set_title(f'Accumulated Frames up to {frame}')
 
-    return plotted_points
+        return plotted_points
 def heatmap_animation(start, stop):
     data = format_data()
     columns = ['data', 'timestamp', 'corner_points', 'distance', 'camera_id']
@@ -69,7 +71,7 @@ def heatmap_animation(start, stop):
     fig, ax = plt.subplots()
     ax.set_xlabel('X-axis')
     ax.set_ylabel('Y-axis')
-    ani = FuncAnimation(fig, update_heatmap, fargs=(df, ax), frames=len(df), repeat=False)
+    ani = FuncAnimation(fig, update_heatmap, fargs=(df, ax, start, stop), frames=len(df), repeat=False)
     plt.show()
 
 def init_heatmap(cam_num):
@@ -121,7 +123,7 @@ def format_data():
     return data
 
 def main():
-    save_overall_heatmap()
+    #save_overall_heatmap()
     heatmap_animation(10,50)
 
 if __name__ == "__main__":
