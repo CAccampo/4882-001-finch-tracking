@@ -68,6 +68,9 @@ def heatmap_animation(start, stop):
     timestamp_format = "%Y-%m-%d %H:%M:%S:%f"
     df['timestamp'] = pd.to_datetime(df['timestamp'], format=timestamp_format)
 
+    if stop == 0:
+        stop = len(df)
+
     fig, ax = plt.subplots()
     ax.set_xlabel('X-axis')
     ax.set_ylabel('Y-axis')
@@ -88,9 +91,7 @@ def init_heatmap(cam_num):
 def draw_heatmap(center_point, data, heatmap_img, camera, dot_colors, bird_id):
     dot_color=tuple((0,0,0))
     if bird_id in dot_colors:
-        print('aa')
         dot_color=dot_colors[bird_id]
-    print(bird_id,dot_color, dot_colors.keys())
     return cv2.circle(heatmap_img, tuple(center_point.round().astype(int)), radius=0, color=dot_color, thickness=-5)
 
 
