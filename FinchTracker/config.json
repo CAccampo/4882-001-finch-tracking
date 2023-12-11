@@ -6,7 +6,6 @@
     "bigquery_project_id": "finchtest",
     "bigquery_dataset_id": "finchds",
     "table_name": "coords_table2",
-    "aruco_dictionary": "DICT_4X4_250",
     "obj_real_size": 20,
     "chessboard_size": "7 6",
     "SAFE_DISTANCE": 6,
