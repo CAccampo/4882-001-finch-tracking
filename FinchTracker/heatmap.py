@@ -108,6 +108,7 @@ def save_overall_heatmap():
             if int(row[4])==i:
                 heatmap_img = draw_heatmap(np.int32(row[2]).mean(0), data, heatmap_img, i, dot_colors, int(row[0]))
         cv2.imwrite(f'heatmap{i}.png', heatmap_img)
+        print(f'Finished drawing heatmap{i}.png')
 
 def format_data():
     result = get_data().to_dataframe()  # Convert RowIterator to DataFrame
