@@ -2,14 +2,14 @@ FINCH TRACKER
 ## Description
 Included are the following files
 - DetectAruco_PiSide.py - primary file; handles live video processing and uploading aruco data to bigquery
-- SetupConfig.py, SetupBirdConfig.py - handles setting config and displaying to GUI
-- DetectAruco_PiSide.exe - DetectAruco_PiSide.py frozen with PyInstaller for easy execution
+- SetupConfig.py, SetupBirdConfig.py - handles setting config, displaying to GUI, recording and uploading data
+- FinchTracker.exe - DetectAruco_PiSide.py frozen with PyInstaller for easy execution
 - config.json, birds_config.json - config files used by the py and exe; should be in same directory
 - calib_img.png - used to calibrate the camera; should be in same directory as DetectAruco
 - heatmap.py - generates animation for bird positions
 - PostProcessing.py - generates heatmap(s) of bigq table data
-- PostProcessing.exe - PostProcessing.py frozen
-- summaries.py [broken] - generates excel sheet summaries on bird activity
+- PostProc.exe - PostProcessing.py frozen as an exe
+- summaries.py [broken?] - generates excel sheet summaries on bird activity
 
 ### GCloud BigQuery Project 
 #GCLOUD CLI FOR AUTHENTICATION
@@ -41,6 +41,7 @@ The executable files should be able to run on a Windows 10 machine from command 
 These do not require PyPi packages to be installed.
 To stop execution from command line, press ctrl+c 
 - If data is uploaded successfully, there should be a line stating 'Data uploaded to'...
+- (This line will not be displayed if no code detected since last upload_interval)
 
 #Python File
 The python files will require the installation of python and several packages to run.
@@ -56,3 +57,4 @@ Opt 2: Click Query tab, open a new query, and run this command (table id should 
         ORDER BY timestamp DESC
         LIMIT 1000
     - The above command will display the top 1000 most recent rows
+    - It will need to be re-run to refresh for new data
