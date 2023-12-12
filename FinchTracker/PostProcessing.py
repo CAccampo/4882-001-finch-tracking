@@ -6,7 +6,7 @@ from heatmap import heatmap_animation, save_overall_heatmap
 from summaries import main as sum_main
 from SetupBirdConfig import load_config
 import numpy as np
-
+import threading
 config = load_config('config.json')
 
 ps = 10
@@ -17,7 +17,13 @@ def open_heatmap():
             cv2.imshow(f'Heatmap {i}', heatmap_img)
         except:
             print(f'heatmap{i}.png not found\nCheck if it has been drawn and exists in current directory.')
+def run_summaries():
+    sum_main()
 
+def threaded_summaries():
+    # Running the summaries in a separate thread to avoid blocking the GUI
+    thread = threading.Thread(target=run_summaries)
+    thread.start()
 def win_loop():
     print('Initializing window')
     window = ck.CTk()
@@ -40,11 +46,12 @@ def win_loop():
     ck.CTkButton(window,text = 'Show', command = open_heatmap, height=40, width=50).grid(row=4, column=1)
     
     ttk.Separator(window,orient='horizontal').grid(row=5, columnspan = 5, sticky='ew', pady=ps*2)
+    ck.CTkButton(window, text='Generate', width=120, command=threaded_summaries, height=40).grid(sticky='w', row=7, pady=ps, padx=ps)
 
     #currently not working
-    ck.CTkLabel(window, text='Summaries', font=('Times', 20)).grid(sticky='w',row=6, columnspan=2, padx=ps, pady=ps)
-    ck.CTkButton(window,text = 'Generate', width=120, command = sum_main, height=40).grid(sticky='w', row=7, pady=ps, padx=ps)
-    ck.CTkButton(window,text = 'Show', command = '', height=40, width=50).grid(row=7, column=1)
+    # ck.CTkLabel(window, text='Summaries', font=('Times', 20)).grid(sticky='w',row=6, columnspan=2, padx=ps, pady=ps)
+    # ck.CTkButton(window,text = 'Generate', width=120, command = sum_main, height=40).grid(sticky='w', row=7, pady=ps, padx=ps)
+    # ck.CTkButton(window,text = 'Show', command = '', height=40, width=50).grid(row=7, column=1)
 
 
     window.mainloop()
