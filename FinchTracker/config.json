@@ -2,7 +2,6 @@
     "num_birds": 5,
     "calibration_image_paths": "calib_img.png",
     "upload_interval": 10,
-    "capture_interval": 0.1,
     "num_cameras": 1,
     "bigquery_project_id": "finchtest",
     "bigquery_dataset_id": "finchds",
