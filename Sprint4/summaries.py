@@ -4,11 +4,13 @@ from google.cloud import bigquery
 from datetime import datetime, timedelta
 import json
 import os
+from dateutil.relativedelta import relativedelta
+from dateutil.parser import parse
 
-with open('config.json', 'r') as config_file:
+with open('Sprint4/config.json', 'r') as config_file:
     config = json.load(config_file)
     
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['CREDENTIALS']
+# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config['CREDENTIALS']
 PROJECT_ID = config['bigquery_project_id']
 DATASET_ID = config['bigquery_dataset_id']
 TABLE_ID = config['table_name']
@@ -42,8 +44,15 @@ def compute_distance(corner_points1, corner_points2):
     x2, y2 = get_center_from_corner_points(corner_points2)
     return np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
+def parse_custom_timestamp(timestamp_str):
+    if ':' in timestamp_str[-8:]:
+        timestamp_str = timestamp_str.rsplit(':', 1)[0] + '.' + timestamp_str.rsplit(':', 1)[1]
+    return parse(timestamp_str)
+
 def calculate_duration(start, end):
-    return (end - start).total_seconds() / 60  
+    start_dt = parse_custom_timestamp(start)
+    end_dt = parse_custom_timestamp(end)
+    return (end_dt - start_dt).total_seconds() / 60
 
 def generate_summary(data):
     summary = {}
@@ -62,11 +71,15 @@ def generate_summary(data):
         summary[id]['positions'].append([corner_points, timestamp])
         if summary[id]['last_position']:
             last_position, last_time = summary[id]['last_position']
+            # Ensure both times are strings
+            last_time_str = last_time.isoformat() if not isinstance(last_time, str) else last_time
+            timestamp_str = timestamp if not isinstance(timestamp, str) else timestamp
+
             distance = compute_distance(corner_points, last_position)
             summary[id]['total_distance'] += distance
 
             if distance < INACTIVITY_THRESHOLD:
-                inactivity_duration = calculate_duration(last_time, timestamp)
+                inactivity_duration = calculate_duration(last_time_str, timestamp_str)
                 summary[id]['inactivity_periods'].append(inactivity_duration)
 
         summary[id]['last_position'] = [corner_points, timestamp]
@@ -81,7 +94,6 @@ def generate_summary(data):
                             break
     
     return summary
-
 def export_to_spreadsheet(summary, query_start_time, query_end_time):
     start_str = query_start_time.strftime("%Y%m%d_%H%M%S")
     end_str = query_end_time.strftime("%Y%m%d_%H%M%S")
@@ -89,24 +101,42 @@ def export_to_spreadsheet(summary, query_start_time, query_end_time):
 
     with pd.ExcelWriter(filename) as writer:
         for id, info in summary.items():
+            timestamps = []
+            distances = []
+            inactivity_periods = []
+            close_contacts = []
+
+            for pos in info['positions']:
+                timestamps.append(pos[1])
+                if len(pos[0]) == 2:
+                    distances.append(compute_distance(pos[0][0], pos[0][1]))
+                else:
+                    distances.append(0)
+                inactivity_periods.append(None)
+                close_contacts.append(None)
+            for i, period in enumerate(info['inactivity_periods']):
+                inactivity_periods[i] = period
+
+            for i, contact in enumerate(info['close_contacts']):
+                close_contacts[i] = f"{contact[0]} at {contact[1]} for {contact[2]} minutes"
+
             df = pd.DataFrame({
-                'Timestamp': [pos[1] for pos in info['positions']],
-                'Distance Travelled': [compute_distance(*pos[0]) for pos in info['positions']],
-                'Inactivity Periods': info['inactivity_periods'],
-                'Close Contacts': [f"{contact[0]} at {contact[1]} for {contact[2]} minutes" for contact in info['close_contacts']]
+                'Timestamp': timestamps,
+                'Distance Travelled': distances,
+                'Inactivity Periods': inactivity_periods,
+                'Close Contacts': close_contacts
             })
             df.to_excel(writer, sheet_name=f"Bird_{id}")
 
-
-def main(interval_minutes=60):
+def main():
     current_time = datetime.utcnow()
-    start_time = current_time - timedelta(minutes=interval_minutes)
+    start_time = current_time - relativedelta(months=1)
     query_start_time = start_time.isoformat()
     query_end_time = current_time.isoformat()
 
     data = get_data_for_interval(query_start_time, query_end_time)
     summary = generate_summary(data)
-    export_to_spreadsheet(summary, query_start_time, query_end_time)
+    export_to_spreadsheet(summary, start_time, current_time)
 
     for id, info in summary.items():
         print(f"Summary for ID {id} from {start_time} to {current_time}:")
