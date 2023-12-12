@@ -46,12 +46,9 @@ def win_loop():
     ck.CTkButton(window,text = 'Show', command = open_heatmap, height=40, width=50).grid(row=4, column=1)
     
     ttk.Separator(window,orient='horizontal').grid(row=5, columnspan = 5, sticky='ew', pady=ps*2)
+    ck.CTkLabel(window, text='Summaries', font=('Times', 20)).grid(sticky='w',row=6, columnspan=2, padx=ps, pady=ps)
     ck.CTkButton(window, text='Generate', width=120, command=threaded_summaries, height=40).grid(sticky='w', row=7, pady=ps, padx=ps)
 
-    #currently not working
-    # ck.CTkLabel(window, text='Summaries', font=('Times', 20)).grid(sticky='w',row=6, columnspan=2, padx=ps, pady=ps)
-    # ck.CTkButton(window,text = 'Generate', width=120, command = sum_main, height=40).grid(sticky='w', row=7, pady=ps, padx=ps)
-    # ck.CTkButton(window,text = 'Show', command = '', height=40, width=50).grid(row=7, column=1)
 
 
     window.mainloop()

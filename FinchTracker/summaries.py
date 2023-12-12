@@ -6,7 +6,7 @@ import json
 import os
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
-with open('Sprint4/config.json', 'r') as config_file:
+with open('config.json', 'r') as config_file:
     config = json.load(config_file)
     
 PROJECT_ID = config['bigquery_project_id']
