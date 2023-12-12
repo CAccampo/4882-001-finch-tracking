@@ -1,4 +1,4 @@
-from DetectAruco_PiSide import main
+from SetupConfig import win_loop
 
 if __name__ == '__main__':
-    main()
+    win_loop()
